@@ -15,6 +15,7 @@ from sklearn.model_selection import train_test_split
 
 # 用户行为，使用format1进行加载
 # 加载全量样本
+from sklearn.svm import SVC
 
 data_format1_path = './data/data_format1/'
 data_format2_path = './data/data_format2/'
@@ -74,9 +75,9 @@ groups = user_log.groupby(['user_id'])
 # 用户交互行为数量 u1
 temp = groups.size().reset_index().rename(columns={0: 'u1'})
 matrix = matrix.merge(temp, on='user_id', how='left')
-# 使用agg 基于列的聚合操作，统计唯一值的个数 item_id, cat_id, merchant_id, brand_id temp = groups['item_id', 'cat_id', 'merchant_id',
-# 'brand_id'].nunique().reset_index().rename(columns={'item_id':'u2', 'cat_id':'u3', 'merchant_id':'u4',
-# 'brand_id':'u5'})
+# 使用agg 基于列的聚合操作，统计唯一值的个数 item_id, cat_id, merchant_id, brand_id
+# temp = groups['item_id', 'cat_id', 'merchant_id', 'brand_id'].nunique().reset_index().rename(
+#     columns={'item_id': 'u2', 'cat_id': 'u3', 'merchant_id': 'u4', 'brand_id': 'u5'})
 temp = groups['item_id'].agg([('u2', 'nunique')]).reset_index()
 matrix = matrix.merge(temp, on='user_id', how='left')
 temp = groups['cat_id'].agg([('u3', 'nunique')]).reset_index()
@@ -85,6 +86,7 @@ temp = groups['merchant_id'].agg([('u4', 'nunique')]).reset_index()
 matrix = matrix.merge(temp, on='user_id', how='left')
 temp = groups['brand_id'].agg([('u5', 'nunique')]).reset_index()
 matrix = matrix.merge(temp, on='user_id', how='left')
+print(matrix.columns.values)
 
 # 时间间隔特征 u6 按照小时
 temp = groups['time_stamp'].agg([('F_time', 'min'), ('L_time', 'max')]).reset_index()
@@ -154,29 +156,31 @@ gc.collect()
 # 将训练集进行切分，20%用于验证
 X_train, X_valid, y_train, y_valid = train_test_split(train_X, train_y, test_size=.05)
 
-# 使用XGBoost
-model = xgb.XGBClassifier(
-    max_depth=5,
-    n_estimators=500,
-    min_child_weight=100,
-    colsample_bytree=0.8,
-    subsample=0.8,
-    eta=0.3,
-    seed=42,
-    alpha=1,
-    learning_rate=0.1
-)
-model.fit(
-    X_train, y_train,
-    eval_metric='auc', eval_set=[(X_train, y_train), (X_valid, y_valid)],
-    verbose=True,
-    # 早停法，如果auc在10epoch没有进步就stop
-    early_stopping_rounds=10
-)
+model = SVC(C=1.0, cache_size=1000, class_weight="balanced", probability=True,verbose=True)
+model.fit(X_train, y_train)
 
-# model.fit(X_train, y_train)
+# # 使用XGBoost
+# model = xgb.XGBClassifier(
+#     max_depth=5,
+#     n_estimators=500,
+#     min_child_weight=100,
+#     colsample_bytree=0.8,
+#     subsample=0.8,
+#     eta=0.3,
+#     seed=42,
+#     alpha=1,
+#     learning_rate=0.1
+# )
+# model.fit(
+#     X_train, y_train,
+#     eval_metric='auc', eval_set=[(X_train, y_train), (X_valid, y_valid)],
+#     verbose=True,
+#     # 早停法，如果auc在10epoch没有进步就stop
+#     early_stopping_rounds=10
+# )
+
 
 prob = model.predict_proba(test_data)
 submission['prob'] = pd.Series(prob[:, 1])
 submission.drop(['origin'], axis=1, inplace=True)
-submission.to_csv('prediction.csv', index=False)
+submission.to_csv('prediction_SVM.csv', index=False)
