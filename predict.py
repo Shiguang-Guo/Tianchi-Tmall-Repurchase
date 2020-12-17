@@ -18,12 +18,14 @@ import numpy as np
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 feature_path = './feature/'
 model_path = './model/'
+data_path = './data/data_format1'
 
 model = torch.load(os.path.join(model_path, 'checkpoint'))
 matrix = pd.read_csv(os.path.join(feature_path, 'data.csv'))
 
 # train_data = matrix[matrix['origin'] == 'train'].drop(['origin'], axis=1)
-test_data = matrix[matrix['origin'] == 'test'].drop(['label', 'origin'], axis=1)
+test_data = matrix[matrix['origin'] == 'test'].drop(['label', 'origin'], axis=1).drop(['user_id'], axis=1).drop(
+    ['merchant_id'], axis=1)
 # print(np.array(train_data).shape)
 # print(np.array(test_data).shape)
 # train_X, train_y = train_data.drop(['label'], axis=1), train_data['label']
@@ -63,10 +65,11 @@ for i in preds:
     fuck = []
     for ii in i:
         fuck.append(ii.item())
-    mmp.append(fuck)
+    mmp.append(fuck[1])
 
 print(mmp)
 
-pred = pd.DataFrame(mmp, index=test_data.index)
+pred = pd.read_csv(os.path.join(data_path, 'test_format1.csv'))
+pred['prob'] = mmp
 
 pred.to_csv('pred.csv', index=True)

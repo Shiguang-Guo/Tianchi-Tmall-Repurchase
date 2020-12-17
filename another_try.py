@@ -27,11 +27,12 @@ model_path = './model/'
 writer = SummaryWriter()
 
 lr = 0.01
-epochs = 50
+epochs = 5
 batch_size = 64
 matrix = pd.read_csv(os.path.join(feature_path, 'data.csv'))
 
-train_data = matrix[matrix['origin'] == 'train'].drop(['origin'], axis=1)
+train_data = matrix[matrix['origin'] == 'train'].drop(['origin'], axis=1).drop(['user_id'], axis=1).drop(
+    ['merchant_id'], axis=1)
 # test_data = matrix[matrix['origin'] == 'test'].drop(['label', 'origin'], axis=1)
 # print(np.array(train_data).shape)
 # print(np.array(test_data).shape)
@@ -64,14 +65,14 @@ class DDataset(Dataset):
         return self.len
 
 
-net = mlp(47)  # 修改为不用硬编码的格式
+net = mlp(45)  # 修改为不用硬编码的格式
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 net.to(device)
 
-optimizer = optim.Adam(net.parameters(), lr=lr, weight_decay=0.001)
+optimizer = optim.Adam(net.parameters(), lr=lr, weight_decay=0.1)
 
 t_v_set = DDataset()
-train_set, val_set = random_split(t_v_set, [200000, 60864])
+train_set, val_set = random_split(t_v_set, [int(len(t_v_set) * 0.8), len(t_v_set) - int(len(t_v_set) * 0.8)])
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
 val_loader = DataLoader(dataset=val_set, batch_size=batch_size, shuffle=False)
 
