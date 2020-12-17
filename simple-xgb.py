@@ -10,7 +10,7 @@ import gc
 import os
 
 import pandas as pd
-import xgboost as xgb
+# import xgboost as xgb
 from sklearn.model_selection import train_test_split
 
 # 用户行为，使用format1进行加载
@@ -19,6 +19,7 @@ from sklearn.svm import SVC
 
 data_format1_path = './data/data_format1/'
 data_format2_path = './data/data_format2/'
+feature_path = './feature/'
 
 user_log = pd.read_csv(os.path.join(data_format1_path, 'user_log_format1.csv'), dtype={'time_stamp': 'str'})
 user_info = pd.read_csv(os.path.join(data_format1_path, 'user_info_format1.csv'))
@@ -145,6 +146,7 @@ temp = pd.get_dummies(matrix['gender'], prefix='g')
 matrix = pd.concat([matrix, temp], axis=1)
 matrix.drop(['age_range', 'gender'], axis=1, inplace=True)
 print(matrix)
+matrix.to_csv(os.path.join(feature_path, 'data.csv'))
 
 # 分割训练数据和测试数据
 train_data = matrix[matrix['origin'] == 'train'].drop(['origin'], axis=1)
@@ -154,9 +156,9 @@ del temp, matrix
 gc.collect()
 
 # 将训练集进行切分，20%用于验证
-X_train, X_valid, y_train, y_valid = train_test_split(train_X, train_y, test_size=.05)
+X_train, X_valid, y_train, y_valid = train_test_split(train_X, train_y, test_size=.5)
 
-model = SVC(C=1.0, cache_size=1000, class_weight="balanced", probability=True,verbose=True)
+model = SVC(C=1.0, cache_size=1000, class_weight="balanced", probability=True, verbose=True)
 model.fit(X_train, y_train)
 
 # # 使用XGBoost
@@ -183,4 +185,4 @@ model.fit(X_train, y_train)
 prob = model.predict_proba(test_data)
 submission['prob'] = pd.Series(prob[:, 1])
 submission.drop(['origin'], axis=1, inplace=True)
-submission.to_csv('prediction_SVM.csv', index=False)
+submission.to_csv('prediction_SVM_.csv', index=False)
