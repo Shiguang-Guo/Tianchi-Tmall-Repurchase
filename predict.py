@@ -72,4 +72,4 @@ print(mmp)
 pred = pd.read_csv(os.path.join(data_path, 'test_format1.csv'))
 pred['prob'] = mmp
 
-pred.to_csv('pred.csv', index=True)
+pred.to_csv('pred.csv', index=False)
