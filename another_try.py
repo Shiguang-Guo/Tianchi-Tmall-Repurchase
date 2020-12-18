@@ -18,7 +18,7 @@ from torch import optim, nn
 from torch.utils.data import Dataset, DataLoader, random_split
 from torch.utils.tensorboard import SummaryWriter
 
-from model import mlp
+from model import mlp, FocalLoss
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
@@ -27,30 +27,17 @@ model_path = './model/'
 
 writer = SummaryWriter()
 
-lr = 0.01
-epochs = 5
+lr = 0.001
+epochs = 10
 batch_size = 64
-matrix = pd.read_csv(os.path.join(feature_path, 'data.csv'))
+matrix = pd.read_csv(os.path.join(feature_path, 'features_train.csv'))
 
-train_data = matrix[matrix['origin'] == 'train'].drop(['origin'], axis=1).drop(['user_id'], axis=1).drop(
-    ['merchant_id'], axis=1)
+train_data = matrix.drop(['user_id'], axis=1).drop(['merchant_id'], axis=1)
 print(np.array(train_data).shape)
-train_data = train_data[train_data['label'] + np.random.random(np.array(train_data).shape[0]) > 0.3]
-print(np.array(train_data).shape)
-# test_data = matrix[matrix['origin'] == 'test'].drop(['label', 'origin'], axis=1)
-# print(np.array(train_data).shape)
-# print(np.array(test_data).shape)
 train_X, train_y = train_data.drop(['label'], axis=1), train_data['label']
 del matrix
 gc.collect()
 
-
-# print(type(train_data))
-
-# targetencoder = LabelEncoder().fit(gatrain.group)
-# y = targetencoder.transform(gatrain.group)
-# nclasses = len(targetencoder.classes_)
-# one_hot = torch.eye(nclasses)[y, :]
 
 class DDataset(Dataset):
     def __init__(self):
@@ -69,11 +56,11 @@ class DDataset(Dataset):
         return self.len
 
 
-net = mlp(45)  # 修改为不用硬编码的格式
+net = mlp(np.array(train_X).shape[1])  # 修改为不用硬编码的格式
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 net.to(device)
 
-optimizer = optim.Adam(net.parameters(), lr=lr, weight_decay=0.1)
+optimizer = optim.Adam(net.parameters(), lr=lr, weight_decay=0.01)
 
 t_v_set = DDataset()
 train_set, val_set = random_split(t_v_set, [int(len(t_v_set) * 0.8), len(t_v_set) - int(len(t_v_set) * 0.8)])
@@ -93,9 +80,7 @@ for epoch in range(epochs):
         n += 1
         feature, label = feature.float().to(device), label.long().to(device)
         net.zero_grad()
-        score = net(feature)
-        criterion = nn.CrossEntropyLoss()
-        loss = criterion(score, label)
+        score, loss = net(feature, label)
         loss.backward()
         optimizer.step()
         train_acc += accuracy_score(label.cpu().data, torch.argmax(score.cpu(), dim=1))
@@ -107,9 +92,7 @@ for epoch in range(epochs):
         for feature, label in val_loader:
             m += 1
             feature, label = feature.float().to(device), label.long().to(device)
-            score = net(feature)
-            criterion = nn.CrossEntropyLoss()
-            loss = criterion(score, label)
+            score, loss = net(feature, label)
             val_acc += accuracy_score(label.cpu(), torch.argmax(score.cpu().data, dim=1))
             val_losses += loss
             label_pred.append(torch.argmax(score.cpu().data, dim=1))

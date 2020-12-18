@@ -21,11 +21,10 @@ model_path = './model/'
 data_path = './data/data_format1'
 
 model = torch.load(os.path.join(model_path, 'checkpoint'))
-matrix = pd.read_csv(os.path.join(feature_path, 'data.csv'))
+matrix = pd.read_csv(os.path.join(feature_path, 'features_test.csv'))
 
 # train_data = matrix[matrix['origin'] == 'train'].drop(['origin'], axis=1)
-test_data = matrix[matrix['origin'] == 'test'].drop(['label', 'origin'], axis=1).drop(['user_id'], axis=1).drop(
-    ['merchant_id'], axis=1)
+test_data = matrix
 # print(np.array(train_data).shape)
 # print(np.array(test_data).shape)
 # train_X, train_y = train_data.drop(['label'], axis=1), train_data['label']
@@ -57,7 +56,7 @@ model.eval()
 with torch.no_grad():
     for feature in test_loader:
         feature = feature.float().to(device)
-        pred = model(feature)
+        pred, _ = model(feature, 0)
         preds += pred.cpu().data
 
 mmp = []
