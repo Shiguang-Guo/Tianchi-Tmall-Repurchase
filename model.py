@@ -15,19 +15,18 @@ class mlp(nn.Module):
     def __init__(self, labels):
         super(mlp, self).__init__()
         self.linear1 = nn.Linear(labels, 32)
-        # self.linear2 = nn.Linear(256, 32)
-        self.linear3 = nn.Linear(32, 2)
+        self.linear2 = nn.Linear(32, 8)
+        self.linear3 = nn.Linear(8, 2)
         self.dropout1 = nn.Dropout(0.5)
-        # self.dropout2 = nn.Dropout(0.5)
-        self.focalloss = FocalLoss(class_num=2, alpha=0.25,)
+        self.dropout2 = nn.Dropout(0.5)
+        self.focalloss = FocalLoss(class_num=2, alpha=0.5, size_average=False)
 
     def forward(self, x, label):
-        # print(x.shape)
         x = self.linear1(x)
         x = F.tanh(x)
         x = self.dropout1(x)
-        # x = F.tanh(self.linear2(x))
-        # x = self.dropout2(x)
+        x = F.tanh(self.linear2(x))
+        x = self.dropout2(x)
         x = F.softmax(self.linear3(x))
         loss = self.focalloss(x, label)
         return x, loss

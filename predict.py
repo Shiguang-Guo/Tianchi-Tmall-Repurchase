@@ -19,14 +19,14 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 feature_path = './feature/'
 model_path = './model/'
 data_path = './data/data_format1'
+prediction_path = './prediction/'
 
 model = torch.load(os.path.join(model_path, 'checkpoint'))
 matrix = pd.read_csv(os.path.join(feature_path, 'features_test.csv'))
 
 # train_data = matrix[matrix['origin'] == 'train'].drop(['origin'], axis=1)
 test_data = matrix
-# print(np.array(train_data).shape)
-# print(np.array(test_data).shape)
+print(test_data.head())
 # train_X, train_y = train_data.drop(['label'], axis=1), train_data['label']
 del matrix
 gc.collect()
@@ -71,4 +71,4 @@ print(mmp)
 pred = pd.read_csv(os.path.join(data_path, 'test_format1.csv'))
 pred['prob'] = mmp
 
-pred.to_csv('pred.csv', index=False)
+pred.to_csv(os.path.join(prediction_path, 'pred_nn.csv'), index=False)
