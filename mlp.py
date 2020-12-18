@@ -56,7 +56,7 @@ class DDataset(Dataset):
         return self.len
 
 
-net = mlp(np.array(train_X).shape[1])  # 修改为不用硬编码的格式
+net = mlp(np.array(train_X).shape[1])
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 net.to(device)
 

@@ -48,8 +48,6 @@ class FocalLoss(nn.Module):
             size_average(bool): By default, the losses are averaged over observations for each minibatch.
                                 However, if the field size_average is set to False, the losses are
                                 instead summed for each minibatch.
-
-
     """
 
     def __init__(self, class_num, alpha=None, gamma=2, size_average=True):

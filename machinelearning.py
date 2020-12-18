@@ -2,9 +2,11 @@ import pandas as pd
 import os
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 import xgboost as xgb
 
-model_type = 'XGBClassifier'
+model_type = 'DecisionTreeClassifier'
 feature_path = './feature/'
 data_format1_path = './data/data_format1/'
 prediction_path = './prediction/'
@@ -39,6 +41,12 @@ elif model_type == 'XGBClassifier':
         # 早停法，如果auc在10epoch没有进步就stop
         early_stopping_rounds=10
     )
+elif model_type == 'DecisionTreeClassifier':
+    model = DecisionTreeClassifier(max_depth=4, random_state=0)
+    model.fit(train_X, train_y)
+elif model_type == 'RandomForestClassifier':
+    model = RandomForestClassifier(n_estimators=10, random_state=2)
+    model.fit(train_X, train_y)
 
 prob = model.predict_proba(test_data)
 submission['prob'] = pd.Series(prob[:, 1])
