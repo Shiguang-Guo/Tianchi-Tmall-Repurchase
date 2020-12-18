@@ -23,9 +23,9 @@ class mlp(nn.Module):
 
     def forward(self, x):
         # print(x.shape)
-        x = F.relu(self.linear1(x))
+        x = F.tanh(self.linear1(x))
         x = self.dropout1(x)
-        x = F.relu(self.linear2(x))
+        x = F.tanh(self.linear2(x))
         x = self.dropout2(x)
         x = F.sigmoid(self.linear3(x))
         return x

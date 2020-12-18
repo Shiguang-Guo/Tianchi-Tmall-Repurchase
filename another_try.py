@@ -34,7 +34,9 @@ matrix = pd.read_csv(os.path.join(feature_path, 'data.csv'))
 
 train_data = matrix[matrix['origin'] == 'train'].drop(['origin'], axis=1).drop(['user_id'], axis=1).drop(
     ['merchant_id'], axis=1)
-train_data = train_data[train_data['label'] + random.random() > 0.3]
+print(np.array(train_data).shape)
+train_data = train_data[train_data['label'] + np.random.random(np.array(train_data).shape[0]) > 0.3]
+print(np.array(train_data).shape)
 # test_data = matrix[matrix['origin'] == 'test'].drop(['label', 'origin'], axis=1)
 # print(np.array(train_data).shape)
 # print(np.array(test_data).shape)
