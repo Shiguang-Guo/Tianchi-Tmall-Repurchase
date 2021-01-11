@@ -14,6 +14,9 @@ import numpy as np
 import pandas as pd
 import ast
 import tensorflow as tf
+from sklearn.preprocessing import LabelEncoder
+
+# from keras import backend as K
 
 data_format1_path = './data/data_format1/'
 data_format2_path = './data/data_format2/'
@@ -71,22 +74,22 @@ submission['origin'] = 'test'
 # user_log['brand_id'] = user_log['brand_id'].astype('int32')
 # user_log['time_stamp'] = pd.to_datetime(user_log['time_stamp'], format='%H%M')
 #
-# lbe_merchant_id = LabelEncoder()
-# lbe_merchant_id.fit(np.r_[0, user_log['merchant_id'].values])
-# user_log['merchant_id'] = lbe_merchant_id.transform(user_log['merchant_id'])
-# matrix['merchant_id'] = lbe_merchant_id.transform(matrix['merchant_id'])
+# label_merchant_id = LabelEncoder()
+# label_merchant_id.fit(np.r_[0, user_log['merchant_id'].values])
+# user_log['merchant_id'] = label_merchant_id.transform(user_log['merchant_id'])
+# matrix['merchant_id'] = label_merchant_id.transform(matrix['merchant_id'])
 #
-# lbe_user_id = LabelEncoder()
-# user_log['user_id'] = lbe_user_id.fit_transform(user_log['user_id'])
-# user_info['user_id'] = lbe_user_id.transform(user_info['user_id'])
-# matrix['user_id'] = lbe_user_id.transform(matrix['user_id'])
+# lable_user_id = LabelEncoder()
+# user_log['user_id'] = lable_user_id.fit_transform(user_log['user_id'])
+# user_info['user_id'] = lable_user_id.transform(user_info['user_id'])
+# matrix['user_id'] = lable_user_id.transform(matrix['user_id'])
 #
-# lbe_item_id = LabelEncoder()
-# user_log['item_id'] = lbe_item_id.fit_transform(user_log['item_id'])
-# lbe_cat_id = LabelEncoder()
-# user_log['cat_id'] = lbe_cat_id.fit_transform(user_log['cat_id'])
-# lbe_brand_id = LabelEncoder()
-# user_log['brand_id'] = lbe_brand_id.fit_transform(user_log['brand_id'])
+# label_item_id = LabelEncoder()
+# user_log['item_id'] = label_item_id.fit_transform(user_log['item_id'])
+# label_cat_id = LabelEncoder()
+# user_log['cat_id'] = label_cat_id.fit_transform(user_log['cat_id'])
+# lablel_brand_id = LabelEncoder()
+# user_log['brand_id'] = lablel_brand_id.fit_transform(user_log['brand_id'])
 #
 # user_log['merchant_id'].max(), user_log['user_id'].max()
 # matrix = matrix.merge(user_info, on='user_id', how='left')
@@ -108,9 +111,6 @@ submission['origin'] = 'test'
 # # 用户交互行为数量 u1
 # temp = groups.size().reset_index().rename(columns={0: 'u1'})
 # matrix = matrix.merge(temp, on='user_id', how='left')
-#
-# # 使用agg 基于列的聚合操作，统计唯一值的个数 item_id, cat_id, merchant_id, brand_id
-# # temp = groups['item_id', 'cat_id', 'merchant_id', 'brand_id'].nunique().reset_index().rename(columns={'item_id':'u2', 'cat_id':'u3', 'merchant_id':'u4', 'brand_id':'u5'})
 #
 # temp = groups['item_id'].agg([('u2', 'nunique')]).reset_index()
 # matrix = matrix.merge(temp, on='user_id', how='left')
@@ -183,7 +183,6 @@ submission['origin'] = 'test'
 # matrix.drop(['age_range', 'gender'], axis=1, inplace=True)
 #
 #
-#
 # lbe_action_type = {0: 1, 1: 2, 2: 3, 3: 4}
 # user_log['action_type'] = user_log['action_type'].map(lbe_action_type)
 # # 用户行为sequence
@@ -192,8 +191,8 @@ submission['origin'] = 'test'
 # # 列名称改成hist_merchant_id 和 hist_action_type
 # temp.columns = ['hist_merchant_id', 'hist_action_type']
 # matrix = matrix.merge(temp, on=['user_id'], how='left')  # 统计时间间隔
-#
-# # 截取，不缺到定长M个
+
+# 截取，不缺到定长M个
 M = 500
 # for feature in ['hist_merchant_id', 'hist_action_type']:
 #     matrix[feature] = matrix[feature].map(lambda x: np.array(x + [0] * (M - len(x)))[:M])
@@ -218,14 +217,6 @@ from deepctr.models import DIN
 
 train_X['action_type'] = 3
 
-# print(train_X.drop_duplicates(['user_id']).shape)
-# print(len(train_X.columns))
-# print(train_X.columns)
-# train_X = train_X.drop(labels=['prob', 'u1', 'u2', 'u3', 'u4', 'u5', 'u6',
-#                                'u7', 'u8', 'u9', 'u10', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8',
-#                                'm9', 'm10', 'um1', 'um2', 'um3', 'um4', 'um5', 'um6', 'um7', 'um8',
-#                                'um9', 'r1', 'r2', 'r3'], axis=1)
-# print(train_X.columns)
 feature_columns = []
 for column in train_X.columns:
     if column != 'hist_merchant_id' and column != 'hist_action_type':
@@ -253,39 +244,29 @@ feature_columns += [
                                            embedding_name='merchant_id'), maxlen=M),
     VarLenSparseFeat(sparsefeat=SparseFeat('hist_action_type', vocabulary_size=4, embedding_dim=4,
                                            embedding_name='action_type'), maxlen=M)]
-# feature_columns += [VarLenSparseFeat('hist_merchant_id', maxlen=M, vocabulary_size=4994 + 1, embedding_dim=8,
-#                                      embedding_name='merchant_id'),
-#                     VarLenSparseFeat('hist_action_type', maxlen=M, vocabulary_size=4 + 1, embedding_dim=4,
-#                                      embedding_name='action_type')]
-hist_features = ['merchant_id', 'action_type']
+history_features = ['merchant_id', 'action_type']
 print(len(feature_columns))
 
 # 使用DIN模型
-model = DIN(feature_columns, hist_features)
+model = DIN(feature_columns, history_features)
 # 使用Adam优化器，二分类的交叉熵
-# model.compile('adam', 'binary_crossentropy', metrics=['binary_crossentropy'])
-model.compile(loss=[binary_focal_loss(alpha=.25, gamma=2)], metrics=["accuracy"])
+model.compile('adam', 'binary_crossentropy', metrics=['binary_crossentropy'])
+# model.compile(loss=[binary_focal_loss(alpha=.25, gamma=2)], metrics=["accuracy"])
 
 # 组装train_model_input，得到feature names，将train_X转换为字典格式
 feature_names = list(train_X.columns)
 train_model_input = {name: train_X[name].values for name in get_feature_names(feature_columns)}
-print(train_model_input['hist_merchant_id'][0].dtype)  # print(train_model_input)
-
 print("########################################")
 
 # histroy输入必须是二维数组
 from tqdm import tqdm
 
 for fea in ['hist_merchant_id', 'hist_action_type']:
-    l = []
+    list = []
     for i in tqdm(train_model_input[fea]):
-        l.append(i)
-    train_model_input[fea] = np.array(l)
+        list.append(i)
+    train_model_input[fea] = np.array(list)
 
-for key in train_model_input:
-    # print(type(key))
-    print(train_model_input[key].dtype)
-# print(type(train_y[0].values))
 history = model.fit(train_model_input, train_y.values, verbose=True, epochs=10, validation_split=0.2, batch_size=512)
 
 # 转换test__model_input
@@ -294,10 +275,10 @@ test_model_input = {name: test_data[name].values for name in feature_names}
 from tqdm import tqdm
 
 for fea in ['hist_merchant_id', 'hist_action_type']:
-    l = []
+    list = []
     for i in tqdm(test_model_input[fea]):
-        l.append(i)
-    test_model_input[fea] = np.array(l)
+        list.append(i)
+    test_model_input[fea] = np.array(list)
 
 # 得到预测结果
 prob = model.predict(test_model_input)
